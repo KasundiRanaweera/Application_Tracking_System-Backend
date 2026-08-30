@@ -17,7 +17,8 @@ public class CorsConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://localhost:3000"
+                "http://localhost:5174",
+                "https://talentbridge-frontend.vercel.app" // ← you will update this after Vercel deployment
         ));
 
         config.setAllowedMethods(List.of(
@@ -25,9 +26,7 @@ public class CorsConfig {
         ));
 
         config.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept"
+                "Authorization", "Content-Type", "Accept"
         ));
 
         config.setAllowCredentials(true);
