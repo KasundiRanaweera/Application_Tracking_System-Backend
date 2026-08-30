@@ -18,7 +18,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://talentbridge-frontend.vercel.app" // ← you will update this after Vercel deployment
+                "https://application-tracking-system-frontend.vercel.app/"
         ));
 
         config.setAllowedMethods(List.of(
