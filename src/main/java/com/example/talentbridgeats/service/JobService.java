@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -124,6 +125,7 @@ public class JobService {
     }
 
     // Candidate: view single OPEN job
+    @Transactional(readOnly = true)
     public JobResponseDto getOpenJobById(Long jobId) {
         Job job = jobRepository.findOpenJobById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Open job not found"));
@@ -131,6 +133,7 @@ public class JobService {
     }
 
     // Candidate: list all OPEN jobs with filtering
+    @Transactional(readOnly = true)
     public Page<JobResponseDto> listOpenJobs(Specification<Job> spec, Pageable pageable) {
         Specification<Job> openJobsOnly = (root, query, cb) ->
                 cb.equal(root.get("status"), JobStatus.OPEN);
@@ -141,6 +144,7 @@ public class JobService {
     }
 
     // Recruiter: list all jobs (any status) for management
+    @Transactional(readOnly = true)
     public Page<JobResponseDto> listJobsByRecruiter(Long recruiterId, Specification<Job> spec, Pageable pageable) {
         Specification<Job> byRecruiter = (root, query, cb) ->
                 cb.equal(root.get("postedBy").get("id"), recruiterId);
