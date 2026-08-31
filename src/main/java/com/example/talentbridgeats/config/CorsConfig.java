@@ -18,7 +18,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://application-tracking-system-frontend.vercel.app/"
+                "https://applicationtrackingsystem-backend-production.up.railway.app"
         ));
 
         config.setAllowedMethods(List.of(
