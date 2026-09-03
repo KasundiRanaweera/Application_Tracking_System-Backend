@@ -16,7 +16,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://application-tracking-system-frontend.vercel.app",
+                "https://application-tracking-system-fronten.vercel.app",
                 "https://application-tracking-system-frontend-git-main-kasundi.vercel.app"
         ));
         config.setAllowedMethods(List.of(
