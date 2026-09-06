@@ -5,6 +5,7 @@ import com.example.talentbridgeats.dto.JobStatusChangeRequestDto;
 import com.example.talentbridgeats.dto.JobUpdateRequestDto;
 import com.example.talentbridgeats.dto.JobResponseDto;
 import com.example.talentbridgeats.model.Job;
+import com.example.talentbridgeats.model.JobStatus;
 import com.example.talentbridgeats.model.EmploymentType;
 import com.example.talentbridgeats.model.WorkMode;
 import com.example.talentbridgeats.service.JobService;
@@ -109,6 +110,7 @@ public class JobController {
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<Page<JobResponseDto>> listRecruiterJobs(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) JobStatus status,
             Pageable pageable) {
 
         Long recruiterId = SecurityUtils.getCurrentUserId();
@@ -117,6 +119,10 @@ public class JobController {
 
         if (search != null && !search.isEmpty()) {
             spec = (root, query, cb) -> cb.like(root.get("title"), "%" + search + "%");
+        }
+        if (status != null) {
+            Specification<Job> statusSpec = (root, query, cb) -> cb.equal(root.get("status"), status);
+            spec = spec == null ? statusSpec : spec.and(statusSpec);
         }
 
         Page<JobResponseDto> jobs = jobService.listJobsByRecruiter(recruiterId, spec, pageable);

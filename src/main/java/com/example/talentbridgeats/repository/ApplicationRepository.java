@@ -30,6 +30,4 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
     // Check if application exists and belongs to candidate
     @Query("SELECT a FROM Application a WHERE a.id = :id AND a.candidate.id = :candidateId")
     Optional<Application> findApplicationByCandidateOwnership(@Param("id") Long id, @Param("candidateId") Long candidateId);
-
-    Optional<Application> findByResumeUrlEndingWith(String filename);
 }
