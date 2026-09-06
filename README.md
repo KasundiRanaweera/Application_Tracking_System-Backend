@@ -6,7 +6,7 @@ Candidates browse open jobs and apply through a clean REST API. Recruiters post 
 review applicants, rate them, add private internal notes, and drive each candidate
 through a defined hiring pipeline — with a strict boundary between what each role can see.
 
-> **Phase 1 — Backend API only.** The React frontend is a planned Phase 2.
+The React frontend is maintained in a separate repository and consumes this API.
 
 ---
 
@@ -34,7 +34,7 @@ through a defined hiring pipeline — with a strict boundary between what each r
 
 The same `Application` record returns **different JSON** depending on who asks.
 
-- **Candidates** receive `ApplicationSummaryResponseDto` — status, job title, applied date. No `rating` field. No `notes` field. Not filtered at runtime — those fields do not exist in the DTO at all.
+- **Candidates** receive `ApplicationSummaryResponseDto` — status, job title, applied date, and update date. No `rating` field. No `notes` field. Not filtered at runtime — those fields do not exist in the DTO at all.
 - **Recruiters** receive `ApplicationDetailResponseDto` — everything above plus rating, internal notes, candidate name, candidate email, resume URL, and cover note.
 
 Internal data cannot leak to candidates because it is **absent from the candidate response shape entirely** — not filtered at runtime, structurally absent. This is a design decision, not a runtime check.
@@ -125,6 +125,22 @@ All endpoints are documented and testable directly from the browser.
 5. Enter `Bearer <your-token>` → click **Authorize**
 6. All protected endpoints now work directly from the browser
 
+### CV upload storage
+
+Candidates can upload PDF, DOC, or DOCX CV files up to 5 MB through the application
+API. The backend stores the file and saves its generated URL on the application.
+
+For Railway, attach a persistent volume to the **backend service** and set its mount
+path to `/data`. Then add this variable to the backend service:
+
+```text
+APP_UPLOAD_DIR=/data/uploads
+```
+
+The application creates the upload directory automatically. Without a persistent
+volume or cloud object storage, uploaded files stored on the container filesystem
+may be lost when Railway redeploys or replaces the service.
+
 ---
 
 ## Testing with Postman
@@ -174,8 +190,10 @@ need to manually copy and paste tokens between requests.
 - `PATCH /api/jobs/{id}/status` — change status (recruiter)
 - `GET /api/jobs/manage/all` — list all own jobs (recruiter)
 
-**Applications (10 requests)**
+**Applications (11 requests)**
 - `POST /api/applications` — apply to job (candidate)
+- `POST /api/applications/resume` — upload a CV (candidate; multipart file, max 5 MB)
+- `GET /api/applications/resume/{filename}` — securely view an uploaded CV
 - `GET /api/applications/me` — list own applications (candidate)
 - `GET /api/applications/me/{id}` — view own application (candidate)
 - `DELETE /api/applications/{id}` — withdraw application (candidate)
@@ -206,13 +224,15 @@ need to manually copy and paste tokens between requests.
 | PUT | `/api/jobs/{id}` | RECRUITER (owner only) | Update job fields. Only allowed when status is `DRAFT` |
 | DELETE | `/api/jobs/{id}` | RECRUITER (owner only) | Delete a job. Only allowed when status is `DRAFT` |
 | PATCH | `/api/jobs/{id}/status` | RECRUITER (owner only) | Change status: `DRAFT → OPEN → CLOSED` only |
-| GET | `/api/jobs/manage/all` | RECRUITER | List all own jobs regardless of status. Optional keyword `search` and pagination |
+| GET | `/api/jobs/manage/all` | RECRUITER | List all own jobs regardless of status. Optional `search`, `status`, sorting, and pagination |
 
 ### Applications — `/api/applications`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | POST | `/api/applications` | USER | Apply to an open job. Optional `resumeUrl` and `coverNote`. Returns `409` if already applied |
+| POST | `/api/applications/resume` | USER | Upload a PDF, DOC, or DOCX CV up to 5 MB and receive its URL |
+| GET | `/api/applications/resume/{filename}` | Candidate owner or RECRUITER | View an uploaded CV securely |
 | GET | `/api/applications/me` | USER | List own applications with current status. Paginated. No rating or notes in response |
 | GET | `/api/applications/me/{id}` | USER | View a single own application. Returns `404` if not owned by caller |
 | DELETE | `/api/applications/{id}` | USER | Withdraw own application. Validated by `PipelineValidator` |
@@ -339,6 +359,7 @@ talentbridge-ats/
     │   │   ├── AuthService.java
     │   │   ├── JobService.java
     │   │   ├── ApplicationService.java
+    │   │   ├── ResumeStorageService.java       # Validates and stores uploaded CV files
     │   │   └── PipelineValidator.java       # All pipeline rules in one place
     │   │
     │   └── util/
