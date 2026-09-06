@@ -24,6 +24,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
     // Find applications for a specific job
     List<Application> findByJobId(Long jobId);
 
+    // Find application by resume file name suffix (used for resume download authorization)
+    Optional<Application> findByResumeUrlEndingWith(String suffix);
+
     // Check if application exists and belongs to candidate
     @Query("SELECT a FROM Application a WHERE a.id = :id AND a.candidate.id = :candidateId")
     Optional<Application> findApplicationByCandidateOwnership(@Param("id") Long id, @Param("candidateId") Long candidateId);
