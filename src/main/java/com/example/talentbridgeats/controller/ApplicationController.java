@@ -11,9 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final com.example.talentbridgeats.service.ResumeStorageService resumeStorageService;
 
     // ==================== CANDIDATE ENDPOINTS ====================
 
@@ -30,6 +35,34 @@ public class ApplicationController {
         Long candidateId = SecurityUtils.getCurrentUserId();
         ApplicationSummaryResponseDto application = applicationService.apply(request, candidateId);
         return ResponseEntity.status(HttpStatus.CREATED).body(application);
+    }
+
+    @PostMapping(value = "/resume", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<java.util.Map<String, String>> uploadResume(@RequestParam("file") MultipartFile file) {
+        String filename = resumeStorageService.store(file);
+        String url = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/api/applications/resume/")
+                .path(filename)
+                .toUriString();
+        return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("url", url));
+    }
+
+    @GetMapping("/resume/{filename:.+}")
+    public ResponseEntity<Resource> downloadResume(@PathVariable String filename) {
+        Resource resource = applicationService.getAuthorizedResume(filename);
+        String contentType = "application/octet-stream";
+        try {
+            String detectedContentType = resource.getURL().openConnection().getContentType();
+            if (detectedContentType != null) contentType = detectedContentType;
+        } catch (Exception ignored) {
+            // Fall back to a safe generic content type when file detection fails.
+        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"resume\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 
     //Get own applications

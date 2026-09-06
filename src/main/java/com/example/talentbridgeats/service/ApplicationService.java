@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.core.io.Resource;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +25,19 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final PipelineValidator pipelineValidator; // ← injected
+    private final ResumeStorageService resumeStorageService;
+
+    public Resource getAuthorizedResume(String filename) {
+        Application application = applicationRepository.findByResumeUrlEndingWith(filename)
+                .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
+        Long currentUserId = com.example.talentbridgeats.util.SecurityUtils.getCurrentUserId();
+        boolean recruiter = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(authority -> authority.getAuthority().equals("ROLE_RECRUITER"));
+        if (!recruiter && !application.getCandidate().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You cannot access this resume");
+        }
+        return resumeStorageService.load(filename);
+    }
 
     // Candidate: Apply to a job
     public ApplicationSummaryResponseDto apply(ApplyRequestDto request, Long candidateId) {
