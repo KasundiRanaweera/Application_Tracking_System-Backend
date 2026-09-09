@@ -8,9 +8,7 @@ through a defined hiring pipeline — with a strict boundary between what each r
 
 The React frontend is maintained in the separate `talentbridge-frontend` repository and consumes this API.
 
-The backend also supports the CV upload and secure CV viewing/download flow used by the frontend:
-- `POST /api/applications/resume` accepts a multipart file upload for the candidate.
-- `GET /api/applications/resume/{filename}` serves the uploaded file securely to the owning candidate or a recruiter reviewing an application.
+
 
 ---
 
