@@ -2,6 +2,9 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
+RUN mkdir -p /data/uploads
+ENV APP_UPLOAD_DIR=/data/uploads
+
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw
