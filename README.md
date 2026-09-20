@@ -8,7 +8,10 @@ through a defined hiring pipeline — with a strict boundary between what each r
 
 The React frontend is maintained in the separate `talentbridge-frontend` repository and consumes this API.
 
+This backend is configured for deployment on Render and is expected to receive requests from the Vercel frontend at the configured CORS origins. The service uses the Render-provided `PORT` variable and keeps the application port compatible with container hosting.
 
+**Frontend app:** [https://application-tracking-system-fronten.vercel.app](https://application-tracking-system-fronten.vercel.app)
+**Backend API:** [https://application-tracking-system-backend.onrender.com](https://application-tracking-system-backend.onrender.com)
 
 ---
 
@@ -109,12 +112,38 @@ spring.datasource.password=your_password
 ./mvnw spring-boot:run
 ```
 
-The app starts on port **8080**. On first boot, Hibernate creates all tables and
-`DataSeeder` inserts both recruiter accounts automatically. No manual schema setup needed.
+The app starts on port **8080** by default. In container deployments, Render provides the `PORT` variable and the app listens on that value via `server.port=${PORT:8080}`.
+
+On first boot, Hibernate creates all tables and `DataSeeder` inserts both recruiter accounts automatically. No manual schema setup needed.
 
 **4. Open Swagger UI**
 
 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+---
+
+## Render Deployment
+
+This project is ready for deployment on Render using the repository root Dockerfile.
+
+### Required environment variables
+
+Set these in the Render service:
+
+```env
+SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<database>?createDatabaseIfNotExist=true
+SPRING_DATASOURCE_USERNAME=<db-user>
+SPRING_DATASOURCE_PASSWORD=<db-password>
+JWT_SECRET=<long-random-secret>
+JWT_EXPIRATION_MS=86400000
+APP_UPLOAD_DIR=/tmp/talentbridge-uploads
+```
+
+The backend container is started from the Dockerfile and passes the Render `PORT` to the application entrypoint so the service binds correctly in production.
+
+### File upload note
+
+If the app is deployed with ephemeral filesystem storage, uploaded CVs may not persist across redeploys. For a production-safe setup, use a persistent volume or object storage and point `APP_UPLOAD_DIR` to a writable mounted directory.
 
 All endpoints are documented and testable directly from the browser.
 
@@ -132,16 +161,7 @@ All endpoints are documented and testable directly from the browser.
 Candidates can upload PDF, DOC, or DOCX CV files up to 5 MB through the application
 API. The backend stores the file and saves its generated URL on the application.
 
-For Railway, attach a persistent volume to the **backend service** and set its mount
-path to `/data`. Then add this variable to the backend service:
-
-```text
-APP_UPLOAD_DIR=/data/uploads
-```
-
-The application creates the upload directory automatically. Without a persistent
-volume or cloud object storage, uploaded files stored on the container filesystem
-may be lost when Railway redeploys or replaces the service.
+For Render deployments, configure a writable storage location for uploaded CVs and set it in `APP_UPLOAD_DIR`. The application creates the upload directory automatically, but uploaded files will not be durable if the service uses only ephemeral filesystem storage.
 
 ---
 
