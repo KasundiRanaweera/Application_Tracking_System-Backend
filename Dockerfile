@@ -13,4 +13,4 @@ RUN ./mvnw -q -DskipTests package
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "target/talentbridge-ats-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["sh", "-c", "java -jar target/talentbridge-ats-0.0.1-SNAPSHOT.jar --server.port=${PORT:-8080}"]
