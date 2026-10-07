@@ -1,7 +1,6 @@
 package com.example.talentbridgeats.repository;
 
 import com.example.talentbridgeats.model.Job;
-import com.example.talentbridgeats.model.JobStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
