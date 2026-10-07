@@ -51,18 +51,13 @@ public class ApplicationController {
 
     @GetMapping("/resume/{filename:.+}")
     public ResponseEntity<Resource> downloadResume(@PathVariable String filename) {
-        Resource resource = applicationService.getAuthorizedResume(filename);
-        String contentType = "application/octet-stream";
-        try {
-            String detectedContentType = resource.getURL().openConnection().getContentType();
-            if (detectedContentType != null) contentType = detectedContentType;
-        } catch (Exception ignored) {
-            // Fall back to a safe generic content type when file detection fails.
-        }
+        var resume = applicationService.getAuthorizedResume(filename);
+        String downloadName = resume.extension().isEmpty() ? "resume" : "resume." + resume.extension();
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"resume\"")
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(resource);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + downloadName + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .contentType(MediaType.parseMediaType(resume.contentType()))
+                .body(resume.resource());
     }
 
     //Get own applications

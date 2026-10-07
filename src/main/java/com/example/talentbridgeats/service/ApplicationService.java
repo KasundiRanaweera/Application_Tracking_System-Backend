@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,8 +26,8 @@ public class ApplicationService {
     private final PipelineValidator pipelineValidator; // ← injected
     private final ResumeStorageService resumeStorageService;
 
-    public Resource getAuthorizedResume(String filename) {
-        Application application = applicationRepository.findByResumeUrlEndingWith(filename)
+    public ResumeStorageService.StoredResume getAuthorizedResume(String filename) {
+        Application application = applicationRepository.findFirstByResumeUrlEndingWith("/" + filename)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
         Long currentUserId = com.example.talentbridgeats.util.SecurityUtils.getCurrentUserId();
         boolean recruiter = SecurityContextHolder.getContext().getAuthentication().getAuthorities()

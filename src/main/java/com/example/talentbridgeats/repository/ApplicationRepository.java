@@ -1,7 +1,6 @@
 package com.example.talentbridgeats.repository;
 
 import com.example.talentbridgeats.model.Application;
-import com.example.talentbridgeats.model.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -25,7 +24,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
     List<Application> findByJobId(Long jobId);
 
     // Find application by resume file name suffix (used for resume download authorization)
-    Optional<Application> findByResumeUrlEndingWith(String suffix);
+    Optional<Application> findFirstByResumeUrlEndingWith(String suffix);
 
     // Check if application exists and belongs to candidate
     @Query("SELECT a FROM Application a WHERE a.id = :id AND a.candidate.id = :candidateId")
