@@ -67,7 +67,7 @@ APPLIED → UNDER_REVIEW → SHORTLISTED → INTERVIEW → OFFER → HIRED
 - A recruiter attempting to withdraw is rejected with `403 Forbidden`
 - A candidate attempting to advance is rejected with `403 Forbidden`
 
-28 unit tests in `PipelineValidatorTest` cover every legal transition, every illegal skip,
+27 unit tests in `PipelineValidatorTest` cover every legal transition, every illegal skip,
 every terminal state, and every role violation — without requiring a Spring context to run.
 
 ### 3. Owner checks on every candidate-facing fetch
@@ -114,11 +114,24 @@ spring.datasource.password=your_password
 
 The app starts on port **8080** by default. In container deployments, Render provides the `PORT` variable and the app listens on that value via `server.port=${PORT:8080}`.
 
-On first boot, Hibernate creates all tables and `DataSeeder` inserts both recruiter accounts automatically. No manual schema setup needed.
+On first boot, Hibernate creates all tables and `DataSeeder` inserts both recruiter accounts automatically. No manual schema setup is needed.
+
+The CV table (`tbl_resume_files`) is also created by `src/main/resources/db/resume-files.sql`, which runs on every startup before Hibernate. This keeps CV uploads working even if `SPRING_JPA_HIBERNATE_DDL_AUTO` is set to `validate` or `none`.
 
 **4. Open Swagger UI**
 
 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+All endpoints are documented and testable directly from the browser.
+
+### Authenticating in Swagger UI
+
+1. Expand `POST /api/auth/login` → click **Try it out**
+2. Enter recruiter or candidate credentials → click **Execute**
+3. Copy the `token` value from the response body
+4. Click **Authorize** (top right of the page)
+5. Enter `Bearer <your-token>` → click **Authorize**
+6. All protected endpoints now work directly from the browser
 
 ---
 
@@ -136,32 +149,30 @@ SPRING_DATASOURCE_USERNAME=<db-user>
 SPRING_DATASOURCE_PASSWORD=<db-password>
 JWT_SECRET=<long-random-secret>
 JWT_EXPIRATION_MS=86400000
-APP_UPLOAD_DIR=/tmp/talentbridge-uploads
 ```
 
-The backend container is started from the Dockerfile and passes the Render `PORT` to the application entrypoint so the service binds correctly in production.
+Optional:
 
-### File upload note
+| Variable | Default | Purpose |
+|---|---|---|
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update` | Hibernate schema mode |
+| `APP_UPLOAD_DIR` | `/data/uploads` | Folder for CVs uploaded before database storage was added (read-only fallback) |
 
-If the app is deployed with ephemeral filesystem storage, uploaded CVs may not persist across redeploys. For a production-safe setup, use a persistent volume or object storage and point `APP_UPLOAD_DIR` to a writable mounted directory.
+The backend container is started from the Dockerfile and passes the Render `PORT` to the application entrypoint so the service binds correctly in production. `server.forward-headers-strategy=framework` makes generated links use `https` behind Render's proxy.
 
-All endpoints are documented and testable directly from the browser.
+### CORS
 
-### Authenticating in Swagger UI
+Allowed frontend origins are listed in `config/CorsConfig.java`. If the frontend moves to a new domain, add it there and redeploy, otherwise the browser blocks every API call from that domain.
 
-1. Expand `POST /api/auth/login` → click **Try it out**
-2. Enter recruiter or candidate credentials → click **Execute**
-3. Copy the `token` value from the response body
-4. Click **Authorize** (top right of the page)
-5. Enter `Bearer <your-token>` → click **Authorize**
-6. All protected endpoints now work directly from the browser
+---
 
-### CV upload storage
+## CV Upload Storage
 
-Candidates can upload PDF, DOC, or DOCX CV files up to 5 MB through the application
-API. The backend stores the file and saves its generated URL on the application.
+Candidates can upload a PDF, DOC or DOCX CV up to 5 MB with `POST /api/applications/resume`. The file is stored **in the MySQL database** (`tbl_resume_files`), so it survives restarts and redeploys on hosts with an ephemeral file system such as Render. The response contains the CV's URL, which the candidate then submits with their application.
 
-For Render deployments, configure a writable storage location for uploaded CVs and set it in `APP_UPLOAD_DIR`. The application creates the upload directory automatically, but uploaded files will not be durable if the service uses only ephemeral filesystem storage.
+`GET /api/applications/resume/{filename}` serves the file to the owning candidate or any recruiter, with the correct content type (`resume.pdf`, `resume.docx`, …). CVs uploaded before database storage was introduced are still read from `APP_UPLOAD_DIR` if they exist; if a file is gone, the endpoint returns `404 Resume file is no longer available`.
+
+Make sure the MySQL `max_allowed_packet` setting allows at least 5 MB (the MySQL 8 default is 64 MB).
 
 ---
 
@@ -312,6 +323,7 @@ need to manually copy and paste tokens between requests.
 talentbridge-ats/
 ├── pom.xml
 ├── README.md
+├── Dockerfile                           # Container image used for Render
 ├── mvnw / mvnw.cmd
 │
 ├── postman/
@@ -322,6 +334,7 @@ talentbridge-ats/
     │   ├── TalentbridgeAtsApplication.java
     │   │
     │   ├── config/
+    │   │   ├── CorsConfig.java              # Allowed frontend origins
     │   │   ├── DataSeeder.java              # Seeds two recruiter accounts on startup
     │   │   ├── OpenApiConfig.java           # Swagger UI with JWT bearer auth
     │   │   └── SecurityConfig.java          # JWT filter chain, role-based HTTP access
@@ -363,13 +376,15 @@ talentbridge-ats/
     │   │   ├── EmploymentType.java          # FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP
     │   │   ├── Application.java
     │   │   ├── ApplicationStatus.java       # Full pipeline stages
-    │   │   └── ApplicationNote.java
+    │   │   ├── ApplicationNote.java
+    │   │   └── ResumeFile.java              # Uploaded CV stored in the database
     │   │
     │   ├── repository/
     │   │   ├── UserRepository.java
     │   │   ├── JobRepository.java           # JpaSpecificationExecutor for filtering
     │   │   ├── ApplicationRepository.java   # Owner-check queries + JpaSpecificationExecutor
-    │   │   └── ApplicationNoteRepository.java
+    │   │   ├── ApplicationNoteRepository.java
+    │   │   └── ResumeFileRepository.java
     │   │
     │   ├── security/
     │   │   ├── JwtService.java              # Generate and validate JWT tokens
@@ -381,26 +396,27 @@ talentbridge-ats/
     │   │   ├── AuthService.java
     │   │   ├── JobService.java
     │   │   ├── ApplicationService.java
-    │   │   ├── ResumeStorageService.java       # Validates and stores uploaded CV files
+    │   │   ├── ResumeStorageService.java   # Validates CVs and stores them in the database
     │   │   └── PipelineValidator.java       # All pipeline rules in one place
     │   │
     │   └── util/
     │       └── SecurityUtils.java           # getCurrentUserId() from SecurityContext
     │
     ├── main/resources/
-    │   └── application.properties
+    │   ├── application.properties
+    │   └── db/resume-files.sql          # Creates tbl_resume_files on startup
     │
     └── test/java/com/example/talentbridgeats/
         ├── TalentbridgeAtsApplicationTests.java
         └── service/
-            └── PipelineValidatorTest.java   # 28 unit tests — no Spring context needed
+            └── PipelineValidatorTest.java   # 27 unit tests — no Spring context needed
 ```
 
 ---
 
 ## Database Schema
 
-Four tables. `tbl_users` uses a `role` column as a discriminator — candidates and recruiters
+Five tables. `tbl_users` uses a `role` column as a discriminator — candidates and recruiters
 share the same table and authentication mechanism, differing only in permissions.
 
 ```
@@ -428,6 +444,10 @@ tbl_application_notes
   id, application_id (FK → tbl_applications),
   recruiter_id (FK → tbl_users),
   content, created_at
+
+tbl_resume_files
+  id, stored_name (UNIQUE), original_name, content_type,
+  size, data (LONGBLOB), created_at
 ```
 
 ---
@@ -452,12 +472,13 @@ tbl_application_notes
 ## Running Tests
 
 ```bash
-./mvnw test
+./mvnw test                          # all tests (needs a running MySQL database)
+./mvnw test -Dtest=PipelineValidatorTest   # pipeline unit tests only, no database
 ```
 
-`PipelineValidatorTest` runs as a **pure unit test** — no Spring context, no database, instant.
+`TalentbridgeAtsApplicationTests` starts the full Spring context, so it needs the database from **How to Run**. `PipelineValidatorTest` runs as a **pure unit test** — no Spring context, no database, instant.
 
-It covers all 28 cases:
+It covers all 27 cases:
 - All 5 legal forward transitions (recruiter advancing candidate)
 - Rejection from all 5 active stages (recruiter)
 - Withdrawal from all 5 active stages (candidate)
@@ -467,4 +488,3 @@ It covers all 28 cases:
 - Role violations — recruiter trying to withdraw, candidate trying to advance or reject
 
 ---
-
