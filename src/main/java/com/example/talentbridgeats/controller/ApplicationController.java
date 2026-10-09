@@ -62,9 +62,11 @@ public class ApplicationController {
 
     //Get own applications
     @GetMapping("/me")
-    public ResponseEntity<Page<ApplicationSummaryResponseDto>> getMyApplications(Pageable pageable) {
+    public ResponseEntity<Page<ApplicationSummaryResponseDto>> getMyApplications(
+            @RequestParam(required = false) ApplicationStatus status,
+            Pageable pageable) {
         Long candidateId = SecurityUtils.getCurrentUserId();
-        Page<ApplicationSummaryResponseDto> applications = applicationService.getMyApplications(candidateId, pageable);
+        Page<ApplicationSummaryResponseDto> applications = applicationService.getMyApplications(candidateId, status, pageable);
         return ResponseEntity.ok(applications);
     }
 

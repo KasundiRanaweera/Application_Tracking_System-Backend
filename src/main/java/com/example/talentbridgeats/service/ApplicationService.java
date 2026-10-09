@@ -63,11 +63,12 @@ public class ApplicationService {
     }
 
     // Candidate: Get own applications
-    public Page<ApplicationSummaryResponseDto> getMyApplications(Long candidateId, Pageable pageable) {
-        return applicationRepository.findAll(
-                (root, query, cb) -> cb.equal(root.get("candidate").get("id"), candidateId),
-                pageable
-        ).map(this::mapToSummaryResponse);
+    public Page<ApplicationSummaryResponseDto> getMyApplications(Long candidateId, ApplicationStatus status, Pageable pageable) {
+        Specification<Application> spec = (root, query, cb) -> cb.equal(root.get("candidate").get("id"), candidateId);
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        return applicationRepository.findAll(spec, pageable).map(this::mapToSummaryResponse);
     }
 
     // Candidate: Get single own application (owner check)
