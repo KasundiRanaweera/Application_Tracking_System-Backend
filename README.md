@@ -10,7 +10,7 @@ The React frontend is maintained in the separate `talentbridge-frontend` reposit
 
 This backend is configured for deployment on Render and is expected to receive requests from the Vercel frontend at the configured CORS origins. The service uses the Render-provided `PORT` variable and keeps the application port compatible with container hosting.
 
-**Frontend app:** [https://application-tracking-system-fronten.vercel.app](https://application-tracking-system-fronten.vercel.app)
+**Frontend app:** [https://application-tracking-system-fronten.vercel.app](https://application-tracking-system-fronten.vercel.app) <br>
 **Backend API:** [https://application-tracking-system-backend.onrender.com](https://application-tracking-system-backend.onrender.com)
 
 > **Note:** the backend runs on a free Render instance and is pinged regularly by UptimeRobot to keep it awake. If it has been idle, the first request may still take up to ~30–60 seconds.
