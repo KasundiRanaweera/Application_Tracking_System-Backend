@@ -161,6 +161,9 @@ Optional:
 |---|---|---|
 | `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update` | Hibernate schema mode |
 | `APP_UPLOAD_DIR` | `/data/uploads` | Folder for CVs uploaded before database storage was added (read-only fallback) |
+| `DB_POOL_SIZE` | `3` | Maximum database connections. Kept small because free hosted MySQL plans (for example Clever Cloud's Dev plan) allow only about 5 connections per user |
+
+The Dockerfile is a two-stage build: the official `maven:3.9-eclipse-temurin-21` image compiles the jar, and a slim `eclipse-temurin:21-jre` image runs it. Run a **single instance** so the app stays within the database's connection limit.
 
 The backend container is started from the Dockerfile and passes the Render `PORT` to the application entrypoint so the service binds correctly in production. `server.forward-headers-strategy=framework` makes generated links use `https` behind Render's proxy.
 
@@ -273,7 +276,7 @@ A Postman collection is also included in the `postman/` folder (`TalentBridge_AT
 talentbridge-ats/
 ├── pom.xml
 ├── README.md
-├── Dockerfile                           # Container image used for Render
+├── Dockerfile                           # Two-stage build (Maven → JRE) used for Render
 ├── mvnw / mvnw.cmd
 │
 ├── postman/
