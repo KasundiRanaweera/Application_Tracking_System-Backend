@@ -13,6 +13,8 @@ This backend is configured for deployment on Render and is expected to receive r
 **Frontend app:** [https://application-tracking-system-fronten.vercel.app](https://application-tracking-system-fronten.vercel.app)
 **Backend API:** [https://application-tracking-system-backend.onrender.com](https://application-tracking-system-backend.onrender.com)
 
+> **Note:** the backend runs on a free Render instance and is pinged regularly by UptimeRobot to keep it awake. If it has been idle, the first request may still take up to ~30–60 seconds.
+
 ---
 
 ## The Two Roles
@@ -100,12 +102,14 @@ This pattern is applied consistently in:
 CREATE DATABASE IF NOT EXISTS talentbridge_ats CHARACTER SET utf8mb4;
 ```
 
-**2. Check credentials in `src/main/resources/application.properties`**
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/talentbridge_ats?createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=your_password
+**2. Set your database credentials as environment variables** (no password is stored in the repo)
+```bash
+# Windows PowerShell
+$env:SPRING_DATASOURCE_PASSWORD="your_mysql_password"
+# macOS / Linux
+export SPRING_DATASOURCE_PASSWORD=your_mysql_password
 ```
+Defaults: URL `jdbc:mysql://localhost:3306/talentbridge_ats`, username `root`. Override with `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` if needed.
 
 **3. Run the application**
 ```bash
@@ -176,65 +180,11 @@ Make sure the MySQL `max_allowed_packet` setting allows at least 5 MB (the MySQL
 
 ---
 
-## Testing with Postman
+## API Testing
 
-A fully documented Postman collection is included in the `postman/` folder.
+The full API is documented and testable in **Swagger UI** (`/swagger-ui.html`) — use it for the fastest way to try every endpoint with a JWT (see *Authenticating in Swagger UI* above).
 
-### Import steps
-
-1. Open Postman → click **Import**
-2. Select `postman/talentbridge-ats.postman_collection.json`
-3. Select the **TalentBridge ATS** environment from the top-right dropdown in Postman
-
-### How tokens work in the collection
-
-The collection uses **environment variables** and **auto-save scripts** so you never
-need to manually copy and paste tokens between requests.
-
-- Run `POST /api/auth/login` (recruiter) → `{{recruiter_token}}` saves automatically
-- Run `POST /api/auth/register` or login (candidate) → `{{candidate_token}}` saves automatically
-- All subsequent requests read the token from the environment variable
-- Refreshing a login updates the token — no other requests break
-
-### Environment variables
-
-| Variable | Set by | Used by |
-|---|---|---|
-| `base_url` | Manual (`http://localhost:8080`) | All requests |
-| `recruiter_token` | Recruiter login post-script | All recruiter endpoints |
-| `candidate_token` | Candidate register/login post-script | All candidate endpoints |
-| `recruiter_id` | Recruiter login post-script | Reference |
-| `candidate_id` | Candidate login post-script | Reference |
-| `job_id` | Create job post-script | Job and application requests |
-| `application_id` | Apply post-script | Application requests |
-
-### Endpoints documented in the collection
-
-**Auth (2 requests)**
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-
-**Jobs (7 requests)**
-- `GET /api/jobs` — list open jobs with filters
-- `GET /api/jobs/{id}` — view open job detail
-- `POST /api/jobs` — create job (recruiter)
-- `PUT /api/jobs/{id}` — update job (recruiter)
-- `DELETE /api/jobs/{id}` — delete job (recruiter)
-- `PATCH /api/jobs/{id}/status` — change status (recruiter)
-- `GET /api/jobs/manage/all` — list all own jobs (recruiter)
-
-**Applications (11 requests)**
-- `POST /api/applications` — apply to job (candidate)
-- `POST /api/applications/resume` — upload a CV (candidate; multipart file, max 5 MB)
-- `GET /api/applications/resume/{filename}` — securely view an uploaded CV
-- `GET /api/applications/me` — list own applications (candidate)
-- `GET /api/applications/me/{id}` — view own application (candidate)
-- `DELETE /api/applications/{id}` — withdraw application (candidate)
-- `GET /api/applications/job/{jobId}` — list job applicants (recruiter)
-- `GET /api/applications/{id}` — view application detail (recruiter)
-- `PATCH /api/applications/{id}/rating` — rate application (recruiter)
-- `POST /api/applications/{id}/notes` — add internal note (recruiter)
-- `PATCH /api/applications/{id}/status` — advance/reject pipeline (recruiter)
+A Postman collection is also included in the `postman/` folder (`TalentBridge_ATS.postman_collection.json`). It currently contains the request names for the register/login, job and application test scenarios, organised by development phase, as a checklist to build out. Set your own `base_url` (for example `http://localhost:8080`) when using it.
 
 ---
 
@@ -327,7 +277,7 @@ talentbridge-ats/
 ├── mvnw / mvnw.cmd
 │
 ├── postman/
-│   └── talentbridge-ats.postman_collection.json
+│   └── TalentBridge_ATS.postman_collection.json
 │
 └── src/
     ├── main/java/com/example/talentbridgeats/
@@ -463,7 +413,7 @@ tbl_resume_files
 | Database | MySQL 8 |
 | Validation | Jakarta Bean Validation |
 | API Docs | SpringDoc OpenAPI 2.8.9 (Swagger UI) |
-| API Testing | Postman (collection included in `/postman`) |
+| API Testing | Swagger UI; Postman collection in `/postman` |
 | Boilerplate | Lombok |
 | Build | Maven (wrapper included) |
 
