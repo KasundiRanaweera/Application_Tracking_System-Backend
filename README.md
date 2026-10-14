@@ -6,11 +6,11 @@ Candidates browse open jobs and apply through a clean REST API. Recruiters post 
 review applicants, rate them, add private internal notes, and drive each candidate
 through a defined hiring pipeline — with a strict boundary between what each role can see.
 
-The React frontend is maintained in the separate `talentbridge-frontend` repository and consumes this API.
+The React frontend is maintained in the separate [Application_Tracking_System-Frontend](https://github.com/KasundiRanaweera/Application_Tracking_System-Frontend) repository and consumes this API.
 
 This backend is configured for deployment on Render and is expected to receive requests from the Vercel frontend at the configured CORS origins. The service uses the Render-provided `PORT` variable and keeps the application port compatible with container hosting.
 
-**Frontend app:** [https://application-tracking-system-fronten.vercel.app](https://application-tracking-system-fronten.vercel.app) <br>
+**Frontend app:** [https://talentbridge-application-tracking-system.vercel.app](https://talentbridge-application-tracking-system.vercel.app) <br>
 **Backend API:** [https://application-tracking-system-backend.onrender.com](https://application-tracking-system-backend.onrender.com)
 
 > **Note:** the backend runs on a free Render instance and is pinged regularly by UptimeRobot to keep it awake. If it has been idle, the first request may still take up to ~30–60 seconds.
