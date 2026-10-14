@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: talentbridge-ats
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    branch: main
+    autoDeployTrigger: commit
+    plan: free
+    envVars:
+      # External MySQL (Render has no managed MySQL) - set values in the dashboard
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+      - key: DB_POOL_SIZE
+        value: "3"
