@@ -15,6 +15,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "https://talentbridge-application-tracking-system.vercel.app",
                 "https://application-tracking-system-fronten.vercel.app",
                 "https://application-tracking-system-frontend-git-main-kasundi.vercel.app"
         ));
