@@ -440,4 +440,3 @@ It covers all 27 cases:
 - All 3 terminal states — `HIRED`, `REJECTED`, `WITHDRAWN`
 - Role violations — recruiter trying to withdraw, candidate trying to advance or reject
 
----
