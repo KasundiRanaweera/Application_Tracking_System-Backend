@@ -15,8 +15,6 @@ This backend is configured for deployment on Render and is expected to receive r
 
 > **Note:** the backend runs on a free Render instance and is pinged regularly by UptimeRobot to keep it awake. If it has been idle, the first request may still take up to ~30–60 seconds.
 
----
-
 ## The Two Roles
 
 | Role | How created | What they can do |
@@ -441,3 +439,7 @@ It covers all 27 cases:
 - Role violations — recruiter trying to withdraw, candidate trying to advance or reject
 
 ---
+
+## License
+
+This project is protected by the terms in the root [LICENSE](../LICENSE) file.
